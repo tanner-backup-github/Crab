@@ -1,0 +1,7 @@
+(define qalue 50.5)
+(define x (+ 3 (+ 10 10)))
+(define y (- 5 3))
+(define z (* 3 (- 5 (+ 1 1))))
+
+(print z)
+(print-nl)
