@@ -20,10 +20,15 @@ typedef struct {
 	union {
 		char *string;
 		double number;
+		struct {
+			parse_node *root;
+			array *args;
+		} function;
 	};
 	enum {
 	        VALUE_STRING,
 		VALUE_NUMBER,
+		VALUE_FUNCTION
 	} tag;
 } crab_value;
 
@@ -42,58 +47,41 @@ CRAB_OP(add, +);
 CRAB_OP(sub, -);
 CRAB_OP(mul, *);
 CRAB_OP(div, /);
+CRAB_OP(gt, >);
+CRAB_OP(lt, <);
+CRAB_OP(gte, >=);
+CRAB_OP(lte, <=);
 
-void crab_define(char *name, array *stack, hash_table *env) {
-	crab_value *v = pop_array(stack);
-	add_hash_table(env, name, v);
-}
-
-void crab_print(array *stack, hash_table *env) {
-	printf("%f\n", ((crab_value *) pop_array(stack))->number);
-}
-
-void eval(parse_node *root, array *stack, hash_table *env) {
-	if (!root->children) {
-		crab_value *v = malloc(sizeof(*v));
-		switch (root->token.type) {
-		case NUMBER: {
-			v->number = strtof(root->token.buf, NULL);
-			v->tag = VALUE_NUMBER;
-			break;
-		}
-		case IDENTIFIER: {
-			v = (crab_value *) get_hash_table(env, root->token.buf);
-			break;
-		}
-		default: {
-			assert(false);
-		        break;
-		}
-		}
-		add_array(stack, v);
-	} else {
-		size_t i = 0;
-		if (str_equals(root->token.buf, "define")) {
-			i = 1;
-		}
-		for (; i < root->children->size; ++i) {
-			eval(GET_ARRAY(root->children, i, parse_node *), stack, env);
-		}
-
-		if (str_equals(root->token.buf, "+")) {
-			crab_add(stack);
-		} else if (str_equals(root->token.buf, "-")) {
-			crab_sub(stack);
-		} else if (str_equals(root->token.buf, "*")) {
-			crab_mul(stack);
-		} else if (str_equals(root->token.buf, "/")) {
-			crab_div(stack);
-		} else if (str_equals(root->token.buf, "define")) {
-		        crab_define(GET_ARRAY(root->children, 0, parse_node *)->token.buf, stack, env);
-		} else if (str_equals(root->token.buf, "print")) {
-			crab_print(stack, env);
-		}
+void print_crab_value(crab_value *v) {
+	switch (v->tag) { // @TODO: this is a copy
+	case VALUE_STRING: {
+		printf("%s\n", v->string);
+		break;
 	}
+	case VALUE_NUMBER: {
+		printf("%f\n", v->number);
+		break;
+	}
+	case VALUE_FUNCTION: {
+		printf("HA YOU THOUGHT\n");
+		break;
+	}
+	}
+}
+
+void print_stack(array *stack) {
+	for (int i = stack->size - 1; i >= 0; --i) {
+		print_crab_value(GET_ARRAY(stack, i, crab_value *));
+	}
+}
+
+void crab_print(array *stack) {
+	crab_value *v = (crab_value *) pop_array(stack);
+	print_crab_value(v);
+}
+
+void eval(parse_node *node, array *stack, hash_table *env) {
+	(void) node, (void) stack, (void) env;
 }
 
 int main(void) {
@@ -107,18 +95,22 @@ int main(void) {
 	free(tokens);
 	
 	hash_table env;
-	init_hash_table(&env, 32, sizeof(crab_value *), NULL);
+	/* init_hash_table(&env, 32, sizeof(crab_value *), NULL); */
 
 	crab_value PI = { 0 };
         PI.number = M_PI;
         PI.tag = VALUE_NUMBER;
-	add_hash_table(&env, "pi", &PI);
+	
+	(void) env, (void) PI;
+	
+	/* add_hash_table(&env, "pi", &PI); */
+	/* crab_value *x = get_hash_table(&env, "pi"); */
 	
 	array stack;
 	INIT_ARRAY(&stack, 32, sizeof(crab_value *));
 	eval(root, &stack, &env);
 	free_array(&stack);
-	free_hash_table(&env);
+	/* free_hash_table(&env); */
 
 	free_parse_nodes(root);
 

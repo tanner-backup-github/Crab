@@ -1,5 +1,2 @@
-(define x 305)	
-(define y (/ 40 30))
-				
-(print x)
-(print y)
+(define sqr (lambda (x) (* x x)))
+(print (sqr 30))
