@@ -1,2 +1,2 @@
-(define sqr (lambda (x) (* x x)))
-(print (sqr 30))
+(define xx 40)	
+(print (- xx 20))

@@ -13,7 +13,7 @@ typedef struct {
 } array;
 
 #define INIT_ARRAY(a, cap, elem_size) init_array_f((a), (cap), (elem_size), NULL)
-#define GET_ARRAY(a, i, type) ((type *) ((a)->elems))[i]
+#define GET_ARRAY(a, i, type) ((type *) ((a)->elems))[i] // @TODO: assert that this is within range
 
 void free_array(array *a) {
 	void (*ff)(void *) = a->free_elem ? a->free_elem : NULL;
@@ -56,14 +56,6 @@ void remove_array(array *a, size_t i) {
 	}
 	memmove(a->elems + i, a->elems + i + 1, a->size - i + 1 * sizeof(void *));
 	--a->size;
-}
-
-void *pop_array(array *a) {
-	size_t i = a->size - 1;
-	void *r = a->elems[i];
-	memmove(a->elems + i, a->elems + i + 1, a->size - i + 1 * sizeof(void *));
-	--a->size;
-	return r;
 }
 
 #endif
