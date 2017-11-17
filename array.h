@@ -13,7 +13,12 @@ typedef struct {
 } array;
 
 #define INIT_ARRAY(a, cap, elem_size) init_array_f((a), (cap), (elem_size), NULL)
-#define GET_ARRAY(a, i, type) ((type *) ((a)->elems))[i] // @TODO: assert that this is within range
+
+extern inline void *get_array(array *a, size_t i) {
+	assert(i < a->size);
+	return a->elems[i];
+}
+#define GET_ARRAY(a, i, type) ((type) get_array((a), (i)))
 
 void free_array(array *a) {
 	void (*ff)(void *) = a->free_elem ? a->free_elem : NULL;

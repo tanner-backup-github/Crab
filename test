@@ -1,2 +1,7 @@
-(define xx 40)	
-(print (- xx 20))
+(define x 10)
+(define xx 10)
+
+(define z (lambda (print xx)))
+
+(z)
+(z)

@@ -93,9 +93,26 @@ void free_crab_value(crab_value *cv) {
 	if (cv->tag == VALUE_STRING) {
 		free(cv->string);
 	} else if (cv->tag == VALUE_FUNCTION) {
-		/* free_array(cv->function.args); */
+		/* if (cv->function.args) { */
+			/* free_array(cv->function.args); */
+		/* } */
 	}
 	free(cv);
+}
+
+crab_value *make_function(char *id, parse_node *root, void (* native)(array *)) {
+	crab_value *r = malloc(sizeof(*r));
+	if (root) {
+		r->function.is_native = false;
+		r->function.root = root;
+	} else {
+		r->function.args = NULL;
+		r->function.is_native = true;
+		r->function.native = native;
+	}
+	r->tag = VALUE_FUNCTION;
+	r->id = id;
+	return r;
 }
 
 void eval(parse_node *node, array *stack, array *env) {
@@ -138,7 +155,6 @@ void eval(parse_node *node, array *stack, array *env) {
 	} else {
 		if (str_equals(node_buf, "define")) {
 			crab_value *cv = malloc(sizeof(*cv));
-			// @TODO: asserty stuff
 			for (size_t i = 1; i < node->children->size; ++i) {
 				eval(GET_ARRAY(node->children, i, parse_node *), stack, env);
 			}
@@ -146,6 +162,10 @@ void eval(parse_node *node, array *stack, array *env) {
 			cv->id = GET_ARRAY(node->children, 0, parse_node *)->token.buf;
 			remove_array(stack, stack->size - 1);
 			add_array(env, cv);
+		} else if (str_equals(node_buf, "lambda")) {
+			/* crab_value *make_function(char *id, parse_node *root, void (* native)(array *)) { */
+			crab_value *lambda = make_function("x", GET_ARRAY(node->children, 0, parse_node *), NULL);
+			add_array(stack, lambda);
 		} else {
 			for (size_t i = 0; i < node->children->size; ++i) {
 				eval(GET_ARRAY(node->children, i, parse_node *), stack, env);
@@ -171,20 +191,6 @@ void eval(parse_node *node, array *stack, array *env) {
 	}
 }
 
-crab_value *make_function(char *id, parse_node *root, void (* native)(array *)) {
-	crab_value *r = malloc(sizeof(*r));
-	if (root) {
-		r->function.is_native = false;
-		r->function.root = root;
-	} else {
-		r->function.is_native = true;
-		r->function.native = native;
-	}
-	r->tag = VALUE_FUNCTION;
-	r->id = id;
-	return r;
-}
-
 int main(void) {
 
 	char *src = read_entire_file("test");
@@ -203,6 +209,7 @@ int main(void) {
 	add_array(&env, make_function("*", NULL, crab_mul));
 	add_array(&env, make_function("/", NULL, crab_div));
 	add_array(&env, make_function("print", NULL, crab_print));
+	/* add_array(&env, make_function("lambda", NULL, crab_lambda)); */
 	
 	array stack;
 	init_array_f(&stack, 32, sizeof(crab_value *), (void *) free_crab_value);
