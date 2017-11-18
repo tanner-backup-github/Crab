@@ -100,18 +100,17 @@ void free_crab_value(crab_value *cv) {
 	free(cv);
 }
 
-crab_value *make_function(char *id, parse_node *root, void (* native)(array *)) {
+crab_value *make_function(parse_node *root, void (* native)(array *), array *args) {
 	crab_value *r = malloc(sizeof(*r));
+	r->function.args = args;
 	if (root) {
 		r->function.is_native = false;
 		r->function.root = root;
 	} else {
-		r->function.args = NULL;
 		r->function.is_native = true;
 		r->function.native = native;
 	}
 	r->tag = VALUE_FUNCTION;
-	r->id = id;
 	return r;
 }
 
@@ -163,8 +162,10 @@ void eval(parse_node *node, array *stack, array *env) {
 			remove_array(stack, stack->size - 1);
 			add_array(env, cv);
 		} else if (str_equals(node_buf, "lambda")) {
-			/* crab_value *make_function(char *id, parse_node *root, void (* native)(array *)) { */
-			crab_value *lambda = make_function("x", GET_ARRAY(node->children, 0, parse_node *), NULL);
+			array *lambda_args = malloc(sizeof(*lambda_args));
+			init_array_f(lambda_args, 4, sizeof(crab_value *), (void *) free_crab_value);
+			
+			crab_value *lambda = make_function(GET_ARRAY(node->children, 1, parse_node *), NULL, lambda_args);
 			add_array(stack, lambda);
 		} else {
 			for (size_t i = 0; i < node->children->size; ++i) {
@@ -204,12 +205,22 @@ int main(void) {
 	array env;
 	init_array_f(&env, 32, sizeof(crab_value *), (void *) free_crab_value);
 
-	add_array(&env, make_function("+", NULL, crab_add));
-	add_array(&env, make_function("-", NULL, crab_sub));
-	add_array(&env, make_function("*", NULL, crab_mul));
-	add_array(&env, make_function("/", NULL, crab_div));
-	add_array(&env, make_function("print", NULL, crab_print));
-	/* add_array(&env, make_function("lambda", NULL, crab_lambda)); */
+	/* add_array(&env, make_native_function("+", crab_add */
+	crab_value *add = make_function(NULL, crab_add, NULL);
+	add->id = "+";
+	add_array(&env, add);
+	crab_value *sub = make_function(NULL, crab_sub, NULL);
+	sub->id = "-";
+	add_array(&env, sub);
+	crab_value *mul = make_function(NULL, crab_mul, NULL);
+	mul->id = "*";
+	add_array(&env, mul);
+	crab_value *div = make_function(NULL, crab_div, NULL);
+        div->id = "/";
+	add_array(&env, div);
+	crab_value *print = make_function(NULL, crab_print, NULL);
+        print->id = "print";
+	add_array(&env, print);
 	
 	array stack;
 	init_array_f(&stack, 32, sizeof(crab_value *), (void *) free_crab_value);
