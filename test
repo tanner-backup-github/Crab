@@ -12,5 +12,8 @@
 
 (define π 3.141593)
 (print π)
+(define τ (* π 2))
 
 (print (> ☭ π))
+
+(print (* π τ))
