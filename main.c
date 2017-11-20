@@ -286,8 +286,13 @@ void eval(parse_node *node, array *stack, hash_table *env) {
 	}
 }
 
-int main(void) {
-	char *src = read_entire_file("test2");
+int main(int argc, char **argv) {
+	if (argc < 2) {
+		printf("Not enough arguments passed to evaluate a file!\n");
+		return -1;
+	}
+	
+	char *src = read_entire_file(argv[1]);
 
 	array *tokens = tokenize(src, strlen(src));
 	free(src);
