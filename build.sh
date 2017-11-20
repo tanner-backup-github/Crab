@@ -1,3 +1,7 @@
 clear
-gcc main.c -o main.o -g -Wall -Wextra
-valgrind ./main.o
+clang main.c -o main.o -O2 -g -Wall -Wextra
+if [ "$1" == "DEBUG" ]; then
+    valgrind ./main.o
+else
+    ./main.o
+fi

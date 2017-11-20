@@ -5,23 +5,15 @@
 #include <stdbool.h>
 #include <string.h>
 #include <ctype.h>
-#include <assert.h>
 #include "array.h"
 #include "dumb_string.h"
+#include "util.h"
 
 typedef enum {
 	IDENTIFIER,
-	STRING,
-        NUMBER,
+	LITERAL,
 	PUNCTUATION,
 } token_type;
-
-const char *const token_type_strings[] = {
-	"IDENTIFIER",
-	"STRING",
-	"NUMBER",
-	"PUNCTUATION",
-};
 
 typedef struct {
 	char *buf;
@@ -29,9 +21,13 @@ typedef struct {
 } token;
 
 // @TODO: escape char validation
-bool is_str(const char *s) {
-	if (*s != '"') { return false; }
-	if (s[strlen(s) - 1] != '"') { return false; }
+bool is_str(const char *s, size_t *len) {
+	size_t llen = strlen(s);
+	if (s[0] != '"') { return false; }
+	if (s[llen - 1] != '"') { return false; }
+	if (len) {
+		*len = llen;
+	}
 	return true;
 }
 
@@ -50,6 +46,10 @@ bool is_num(const char *s) {
 	return true;
 }
 
+bool is_boolean(const char *s) {
+	return str_equals(s, "true") || str_equals(s, "false");
+}
+
 static token *make_token(char *buf, token_type type) {
 	token *t = malloc(sizeof(*t));
 	assert(t);
@@ -65,6 +65,11 @@ void free_token(token *t) {
 	t = NULL;
 }
 
+
+#define MODIFY_TOKEN_TYPE(cb, t) if (is_str((cb), NULL) || is_num((cb)) || is_boolean((cb))) { \
+		(t) = LITERAL;						\
+	}
+
 array *tokenize(const char *src, size_t src_len) {
         array *tokens = malloc(sizeof(*tokens));
         init_array_f(tokens, 32, sizeof(token), (void *) free_token);
@@ -73,6 +78,7 @@ array *tokenize(const char *src, size_t src_len) {
 	init_dumb_string(&buf, "", 32);
 	bool in_str = false;
 	bool in_comment = false;
+	int parens = 0;
 	for (size_t i = 0; i < src_len; ++i) {
 		char c = src[i];
 		bool c_space = isspace(c);
@@ -88,21 +94,17 @@ array *tokenize(const char *src, size_t src_len) {
 		}
 		
 		if (c == '(' && !in_str) {
+			parens++;
 			token *t = make_token(strdup("("), PUNCTUATION);
 			add_array(tokens, t);
 		} else if (c == ')' && !in_str) {
+			parens--;
 			if (buf.len) {				
 				char *copybuf = buf.data;
 				size_t copy_len = buf.len;
 				token_type type = IDENTIFIER;
-				if (is_str(copybuf)) {
-					type = STRING;
-					++copybuf;
-					copy_len -= 2;
-				} else if (is_num(copybuf)) {
-					type = NUMBER;
-				}
-				
+				MODIFY_TOKEN_TYPE(copybuf, type);
+
 				token *t = make_token(strndup(copybuf, copy_len), type);
 				
 				add_array(tokens, t);
@@ -115,13 +117,8 @@ array *tokenize(const char *src, size_t src_len) {
 			token_type type = IDENTIFIER;
 			char *copybuf = buf.data;
 			size_t copy_len = buf.len;
-			if (is_str(copybuf)) {
-				type = STRING;
-				++copybuf;
-				copy_len -= 2;
-			} else if (is_num(copybuf)) {
-				type = NUMBER;
-			}
+
+			MODIFY_TOKEN_TYPE(copybuf, type);
 
 			token *t = make_token(strndup(copybuf, copy_len), type);
 			add_array(tokens, t);
@@ -135,6 +132,8 @@ array *tokenize(const char *src, size_t src_len) {
 	}
 	free_dumb_string(&buf);
 
+	ASSERT_LOG(parens == 0, "Unmatched parentheses");
+	
 	return tokens;
 }
 

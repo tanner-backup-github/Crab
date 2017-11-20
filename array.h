@@ -14,11 +14,7 @@ typedef struct {
 
 #define INIT_ARRAY(a, cap, elem_size) init_array_f((a), (cap), (elem_size), NULL)
 
-extern inline void *get_array(array *a, size_t i) {
-	assert(i < a->size);
-	return a->elems[i];
-}
-#define GET_ARRAY(a, i, type) ((type) get_array((a), (i)))
+#define GET_ARRAY(a, i, type) (assert((i) < (a)->size), (type) ((a)->elems[(i)]))
 
 void free_array(array *a) {
 	void (*ff)(void *) = a->free_elem ? a->free_elem : NULL;

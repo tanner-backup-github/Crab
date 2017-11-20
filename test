@@ -1,8 +1,16 @@
-(define x 10)
-(define xx 10)
+(define add-400 (lambda (x) (+ x 400)))
 
-(define z (lambda (c) (print (+ 30 xx))))
-(define v (lambda (c) (print (+ 30 xx))))
-	
-(z 30)
-(v 30)
+(define z (add-400 10))
+(define x 40)
+
+(define Ϯdo-things (lambda (x) (if (> z x) (+ x 1) (+ x 0))))
+
+(print (Ϯdo-things 40))
+
+(define ☭ 9001)
+(print ☭)
+
+(define π 3.141593)
+(print π)
+
+(print (> ☭ π))
