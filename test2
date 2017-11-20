@@ -1,4 +1,5 @@
 (define do-less-than-40 (lambda (x f) (if (< x 40)
 					    (f x) x)))
 
-(do-less-than-40 30 print)
+	
+(do-less-than-40 (- 10 105) print)

@@ -9,6 +9,7 @@
 #include "hash_table.h"
 #include "util.h"
 
+// @TODO: lists & quote
 // @TODO: (print "\n")
 // @TODO: char[] array
 // @TODO: safe_free safe_malloc
@@ -71,6 +72,7 @@ CRAB_CMP(gt, >);
 CRAB_CMP(lt, <);
 CRAB_CMP(gte, <=);
 CRAB_CMP(lte, >=);
+CRAB_CMP(eq, ==);
 
 void print_crab_value(crab_value *v) {
 	switch (v->tag) {
@@ -248,6 +250,12 @@ void eval(parse_node *node, array *stack, hash_table *env) {
 			crab_value *lambda = make_lambda_function(GET_ARRAY(node->children, 1, parse_node *),
 								  GET_ARRAY(node->children, 0, parse_node *));
 			add_array(stack, lambda);
+		} else if (str_equals(node_buf, "do")) {
+			for (size_t i = 0; i < node->children->size; ++i) {
+				eval(GET_ARRAY(node->children, i, parse_node *), stack, env);
+			}
+		} else if (str_equals(node_buf, "quote")) {
+			
 		} else {
 			for (size_t i = 0; i < node->children->size; ++i) {
 				eval(GET_ARRAY(node->children, i, parse_node *), stack, env);
@@ -264,7 +272,6 @@ void eval(parse_node *node, array *stack, hash_table *env) {
 			if (v->function.is_native) {
 				v->function.native(stack);
 			} else {
-			
 				while (num_args) {
 					crab_value *local = malloc(sizeof(*local));
 					assert(local);
@@ -277,7 +284,8 @@ void eval(parse_node *node, array *stack, hash_table *env) {
 				}
 				
 				eval(v->function.root, stack, env);
-				
+
+				// @TODO: fix recursion!!!!!!
 				for (size_t i = 0; i < v->function.num_args; ++i) {
 					remove_hash_table(env, v->function.arg_names[i]);
 				}
@@ -303,14 +311,15 @@ int main(int argc, char **argv) {
 	hash_table env;
 	init_hash_table(&env, 64, (void *) free_crab_value);
 
-	add_hash_table(&env, "+", make_native_function(crab_add, 2));
-	add_hash_table(&env, "-", make_native_function(crab_sub, 2));
-	add_hash_table(&env, "*", make_native_function(crab_mul, 2));
-	add_hash_table(&env, "/", make_native_function(crab_div, 2));
-	add_hash_table(&env, ">", make_native_function(crab_gt, 2));
-	add_hash_table(&env, "<", make_native_function(crab_lt, 2));
+	add_hash_table(&env, "+",  make_native_function(crab_add, 2));
+	add_hash_table(&env, "-",  make_native_function(crab_sub, 2));
+	add_hash_table(&env, "*",  make_native_function(crab_mul, 2));
+	add_hash_table(&env, "/",  make_native_function(crab_div, 2));
+	add_hash_table(&env, ">",  make_native_function(crab_gt, 2));
+	add_hash_table(&env, "<",  make_native_function(crab_lt, 2));
 	add_hash_table(&env, ">=", make_native_function(crab_lte, 2));
 	add_hash_table(&env, "<=", make_native_function(crab_gte, 2));
+	add_hash_table(&env, "=",  make_native_function(crab_eq, 2));
 	add_hash_table(&env, "print", make_native_function(crab_print, 1));
 
 	array stack;

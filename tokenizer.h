@@ -18,6 +18,7 @@ typedef enum {
 typedef struct {
 	char *buf;
         token_type type;
+	size_t line;
 } token;
 
 // @TODO: escape char validation
@@ -32,16 +33,18 @@ bool is_str(const char *s, size_t *len) {
 }
 
 bool is_num(const char *s) {
+	size_t i = 0;
+	if (*s == '-') { ++i; }
+	
         bool dot = false;
-	for (size_t i = 0; s[i] != '\0'; ++i) {
+	while (s[i] != '\0') {
 		char c = s[i];
 		if (c == '.' && !dot) {
 			dot = true;
-			continue;
-		}
-		if (!isdigit(c) || (c == '.' && dot)) {
+		} else if (!isdigit(c) || (c == '.' && dot)) {
 			return false;
 		}
+		++i;
 	}
 	return true;
 }
@@ -50,11 +53,12 @@ bool is_boolean(const char *s) {
 	return str_equals(s, "true") || str_equals(s, "false");
 }
 
-static token *make_token(char *buf, token_type type) {
+static token *make_token(char *buf, token_type type, size_t line) {
 	token *t = malloc(sizeof(*t));
 	assert(t);
 	t->buf = buf;
 	t->type = type;
+	t->line = line;
 	return t;
 }
 
@@ -79,6 +83,7 @@ array *tokenize(const char *src, size_t src_len) {
 	bool in_str = false;
 	bool in_comment = false;
 	int parens = 0;
+	size_t line = 1;
 	for (size_t i = 0; i < src_len; ++i) {
 		char c = src[i];
 		bool c_space = isspace(c);
@@ -91,11 +96,13 @@ array *tokenize(const char *src, size_t src_len) {
 		} else if (c == '#' && !in_str) {
 			in_comment = true;
 			continue;
+		} else if (c == '\n') {
+			++line;
 		}
 		
 		if (c == '(' && !in_str) {
 			parens++;
-			token *t = make_token(strdup("("), PUNCTUATION);
+			token *t = make_token(strdup("("), PUNCTUATION, line);
 			add_array(tokens, t);
 		} else if (c == ')' && !in_str) {
 			parens--;
@@ -105,13 +112,13 @@ array *tokenize(const char *src, size_t src_len) {
 				token_type type = IDENTIFIER;
 				MODIFY_TOKEN_TYPE(copybuf, type);
 
-				token *t = make_token(strndup(copybuf, copy_len), type);
+				token *t = make_token(strndup(copybuf, copy_len), type, line);
 				
 				add_array(tokens, t);
 				clear_dumb_string(&buf);
 			}
 			
-		        token *t = make_token(strdup(")"), PUNCTUATION);
+		        token *t = make_token(strdup(")"), PUNCTUATION, line);
 			add_array(tokens, t);
 		} else if (c_space && !in_str && buf.len) {
 			token_type type = IDENTIFIER;
@@ -120,7 +127,7 @@ array *tokenize(const char *src, size_t src_len) {
 
 			MODIFY_TOKEN_TYPE(copybuf, type);
 
-			token *t = make_token(strndup(copybuf, copy_len), type);
+			token *t = make_token(strndup(copybuf, copy_len), type, line);
 			add_array(tokens, t);
 			
 		        clear_dumb_string(&buf);

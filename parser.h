@@ -28,7 +28,7 @@ void free_parse_nodes(parse_node *root) {
 parse_node *parse(array *tokens) {
 	parse_node *root = malloc(sizeof(*root));
 	assert(root);
-	root->token = (token) { strdup("#ROOT#"), PUNCTUATION };
+	root->token = (token) { strdup("#ROOT#"), PUNCTUATION, 0 };
 	root->children = malloc(sizeof(*root->children));
 	assert(root->children);
         init_array_f(root->children, 4, sizeof(parse_node *), (void *) free_parse_nodes);

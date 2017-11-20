@@ -1,5 +1,6 @@
 (define add-400 (lambda (x) (+ x 400)))
 
+(print (add-400 20))
 (define z (add-400 10))
 (define x 40)
 
@@ -10,8 +11,9 @@
 (define ☭ 9001)
 (print ☭)
 
-(define π 3.141593)
-
+(define π 3.14)
+(print π)
+	
 (print (> ☭ π))
 
 (define τ (* π 2))
@@ -20,3 +22,8 @@
 
 (print (* π τ))
 (print (* pi tau))
+
+
+(if (> 40 30)
+	(print 40)
+	(print 30))
