@@ -11,9 +11,12 @@
 (print ☭)
 
 (define π 3.141593)
-(print π)
-(define τ (* π 2))
 
 (print (> ☭ π))
 
+(define τ (* π 2))
+(define pi π)
+(define tau τ)
+
 (print (* π τ))
+(print (* pi tau))

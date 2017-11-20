@@ -27,7 +27,7 @@ typedef struct {
 				void (* native)(array *);
 			};
 			char **arg_names;
-			size_t arg_names_size;
+			size_t num_args;
 			bool is_native;
 		} function;
 	};
@@ -104,7 +104,7 @@ void free_crab_value(crab_value *v) {
 	switch (v->tag) {
 	case VALUE_FUNCTION: {
 		if (v->function.arg_names) {
-			for (size_t i = 0; i < v->function.arg_names_size; ++i) {
+			for (size_t i = 0; i < v->function.num_args; ++i) {
 				free(v->function.arg_names[i]);
 			}
 			free(v->function.arg_names);
@@ -132,10 +132,10 @@ void print_parse_nodes(parse_node *node) {
 	}
 }
 
-crab_value *make_native_function(void (* native)(array *)) {
+crab_value *make_native_function(void (* native)(array *), size_t num_args) {
 	crab_value *r = malloc(sizeof(*r));
 	r->function.arg_names = NULL;
-	r->function.arg_names_size = 0;
+	r->function.num_args = num_args;
 	r->function.root = NULL;
 	r->function.is_native = true;
 	r->function.native = native;
@@ -148,15 +148,15 @@ crab_value *make_lambda_function(parse_node *root, parse_node *arg_nodes) {
 	assert(r);
 	
 	if (str_equals(arg_nodes->token.buf, "()")) {
-		r->function.arg_names_size = 0;
+		r->function.num_args = 0;
 		r->function.arg_names = NULL;
 	} else {		
-		r->function.arg_names_size = 1 + arg_nodes->children->size;
-		r->function.arg_names = malloc(sizeof(char *) * (r->function.arg_names_size));
+		r->function.num_args = 1 + arg_nodes->children->size;
+		r->function.arg_names = malloc(sizeof(char *) * (r->function.num_args));
 		assert(r->function.arg_names);
 		
 		r->function.arg_names[0] = strdup(arg_nodes->token.buf);
-		for (size_t i = 0; i < r->function.arg_names_size - 1; ++i) {
+		for (size_t i = 0; i < r->function.num_args - 1; ++i) {
 			r->function.arg_names[1 + i] =
 				strdup(GET_ARRAY(arg_nodes->children, i, parse_node *)->token.buf);
 		}
@@ -215,13 +215,12 @@ void eval(parse_node *node, array *stack, hash_table *env) {
 			crab_value *to_assign = GET_ARRAY(stack, stack->size - 1, crab_value *);
 			*v = *to_assign;
 			if (to_assign->tag == VALUE_FUNCTION) {
-				v->function.arg_names = malloc(to_assign->function.arg_names_size * sizeof(char *));
+				v->function.arg_names = malloc(to_assign->function.num_args * sizeof(char *));
 
-				for (size_t i = 0; i < to_assign->function.arg_names_size; ++i) {
+				for (size_t i = 0; i < to_assign->function.num_args; ++i) {
 					v->function.arg_names[i] = strdup(to_assign->function.arg_names[i]);
 				}
 			}
-			
 
 			remove_array(stack, stack->size - 1);
 			
@@ -258,13 +257,14 @@ void eval(parse_node *node, array *stack, hash_table *env) {
 			}
 
 			crab_value *v = GET_HASH_TABLE(env, node_buf, crab_value *);
+			size_t num_args = v->function.num_args;
+			ASSERT_LOG(node->children->size == num_args,
+				   "Incorrect arity supplied to function %s\n", node_buf);
+
 			if (v->function.is_native) {
 				v->function.native(stack);
 			} else {
-				size_t num_args = v->function.arg_names_size;
-				ASSERT_LOG(node->children->size == num_args,
-					   "Incorrect arity supplied to function %s\n", node_buf);
-
+			
 				while (num_args) {
 					crab_value *local = malloc(sizeof(*local));
 					assert(local);
@@ -278,7 +278,7 @@ void eval(parse_node *node, array *stack, hash_table *env) {
 				
 				eval(v->function.root, stack, env);
 				
-				for (size_t i = 0; i < v->function.arg_names_size; ++i) {
+				for (size_t i = 0; i < v->function.num_args; ++i) {
 					remove_hash_table(env, v->function.arg_names[i]);
 				}
 			}
@@ -287,7 +287,7 @@ void eval(parse_node *node, array *stack, hash_table *env) {
 }
 
 int main(void) {
-	char *src = read_entire_file("test");
+	char *src = read_entire_file("test2");
 
 	array *tokens = tokenize(src, strlen(src));
 	free(src);
@@ -298,15 +298,15 @@ int main(void) {
 	hash_table env;
 	init_hash_table(&env, 64, (void *) free_crab_value);
 
-	add_hash_table(&env, "+", make_native_function(crab_add));
-	add_hash_table(&env, "-", make_native_function(crab_sub));
-	add_hash_table(&env, "*", make_native_function(crab_mul));
-	add_hash_table(&env, "/", make_native_function(crab_div));
-	add_hash_table(&env, ">", make_native_function(crab_gt));
-	add_hash_table(&env, "<", make_native_function(crab_lt));
-	add_hash_table(&env, ">=", make_native_function(crab_lte));
-	add_hash_table(&env, "<=", make_native_function(crab_gte));
-	add_hash_table(&env, "print", make_native_function(crab_print));
+	add_hash_table(&env, "+", make_native_function(crab_add, 2));
+	add_hash_table(&env, "-", make_native_function(crab_sub, 2));
+	add_hash_table(&env, "*", make_native_function(crab_mul, 2));
+	add_hash_table(&env, "/", make_native_function(crab_div, 2));
+	add_hash_table(&env, ">", make_native_function(crab_gt, 2));
+	add_hash_table(&env, "<", make_native_function(crab_lt, 2));
+	add_hash_table(&env, ">=", make_native_function(crab_lte, 2));
+	add_hash_table(&env, "<=", make_native_function(crab_gte, 2));
+	add_hash_table(&env, "print", make_native_function(crab_print, 1));
 
 	array stack;
 	init_array_f(&stack, 32, sizeof(crab_value *), (void *) free_crab_value);
