@@ -1,5 +1,4 @@
-#ifndef ARRAY_H__
-#define ARRAY_H__
+#pragma once
 
 #include <stdlib.h>
 #include <assert.h>
@@ -58,5 +57,3 @@ void remove_array(array *a, size_t i) {
 	memmove(a->elems + i, a->elems + i + 1, a->size - i + 1 * sizeof(void *));
 	--a->size;
 }
-
-#endif

@@ -1,8 +1,0 @@
-(define until (lambda (x)
-		      (do
-			      (print x)
-			      (if (= x 0)
-				      0
-				      (until (- x 1))))))
-
-(until 30)

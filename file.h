@@ -1,5 +1,4 @@
-#ifndef FILE_H__
-#define FILE_H__
+#pragma once
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -17,5 +16,3 @@ char *read_entire_file(const char *path) {
 	fclose(f);
 	return buf;
 }
-
-#endif

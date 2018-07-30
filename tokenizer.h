@@ -1,5 +1,4 @@
-#ifndef TOKENIZER_H__
-#define TOKENIZER_H__
+#pragma once
 
 #include <stdlib.h>
 #include <stdbool.h>
@@ -35,7 +34,7 @@ bool is_str(const char *s, size_t *len) {
 bool is_num(const char *s) {
 	size_t i = 0;
 	if (*s == '-') { ++i; }
-	
+
         bool dot = false;
 	while (s[i] != '\0') {
 		char c = s[i];
@@ -87,7 +86,7 @@ array *tokenize(const char *src, size_t src_len) {
 	for (size_t i = 0; i < src_len; ++i) {
 		char c = src[i];
 		bool c_space = isspace(c);
-		
+
 		if (c == '"') { // @TODO: escape chars
 			in_str = !in_str;
 		} else if (c == '\n' && in_comment) {
@@ -99,25 +98,25 @@ array *tokenize(const char *src, size_t src_len) {
 		} else if (c == '\n') {
 			++line;
 		}
-		
+
 		if (c == '(' && !in_str) {
 			parens++;
 			token *t = make_token(strdup("("), PUNCTUATION, line);
 			add_array(tokens, t);
 		} else if (c == ')' && !in_str) {
 			parens--;
-			if (buf.len) {				
+			if (buf.len) {
 				char *copybuf = buf.data;
 				size_t copy_len = buf.len;
 				token_type type = IDENTIFIER;
 				MODIFY_TOKEN_TYPE(copybuf, type);
 
 				token *t = make_token(strndup(copybuf, copy_len), type, line);
-				
+
 				add_array(tokens, t);
 				clear_dumb_string(&buf);
 			}
-			
+
 		        token *t = make_token(strdup(")"), PUNCTUATION, line);
 			add_array(tokens, t);
 		} else if (c_space && !in_str && buf.len) {
@@ -129,7 +128,7 @@ array *tokenize(const char *src, size_t src_len) {
 
 			token *t = make_token(strndup(copybuf, copy_len), type, line);
 			add_array(tokens, t);
-			
+
 		        clear_dumb_string(&buf);
 		}
 
@@ -139,9 +138,7 @@ array *tokenize(const char *src, size_t src_len) {
 	}
 	free_dumb_string(&buf);
 
-	ASSERT_LOG(parens == 0, "Unmatched parentheses");
-	
+	assert(parens == 0);
+
 	return tokens;
 }
-
-#endif

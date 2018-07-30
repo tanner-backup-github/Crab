@@ -1,5 +1,4 @@
-#ifndef HASH_TABLE__
-#define HASH_TABLE__
+#pragma once
 
 #include <stdio.h>
 #include <string.h>
@@ -78,7 +77,8 @@ void add_hash_table(hash_table *h, char *key, void *data) {
 }
 
 void *get_raw_hash_table(hash_table *h, char *key) {
-	ASSERT_LOG(key_exists_hash_table(h, key, NULL), "Key %s was not found!\n", key);
+	assert(key_exists_hash_table(h, key, NULL));
+
 	size_t idx = hash(key) % h->num_buckets;
 	array *bucket = h->buckets[idx];
 	array *keys = h->keys[idx];
@@ -93,7 +93,8 @@ void *get_raw_hash_table(hash_table *h, char *key) {
 }
 
 void remove_hash_table(hash_table *h, char *key) {
-	ASSERT_LOG(key_exists_hash_table(h, key, NULL), "Key %s was not found!\n", key);
+	assert(key_exists_hash_table(h, key, NULL));
+
 	size_t idx = hash(key) % h->num_buckets;
 	array *keys = h->keys[idx];
 	array *bucket = h->buckets[idx];
@@ -115,5 +116,3 @@ void free_hash_table(hash_table *h) {
 	free(h->keys);
 	free(h->buckets);
 }
-
-#endif

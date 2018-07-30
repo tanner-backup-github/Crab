@@ -1,5 +1,4 @@
-#ifndef __DUMB_STRING__
-#define __DUMB_STRING__
+#pragma once
 
 #include <stdlib.h>
 #include <string.h>
@@ -64,5 +63,3 @@ extern inline void clear_dumb_string(dumb_string *ds) {
 	memset(ds->data, 0, ds->len);
 	ds->len = 0;
 }
-
-#endif
